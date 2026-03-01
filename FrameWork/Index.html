@@ -1,0 +1,106 @@
+
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>AI Test</title>
+  </head>
+  <body>
+    <h1>AI Test</h1>
+
+    <textarea id="prompt" rows="6" cols="60" placeholder="Type your prompt..."></textarea>
+    <br />
+    <button id="send">Send</button>
+    <button id="clear" type="button">Clear</button>
+
+    <h3>Response</h3>
+    <pre id="output"></pre>
+
+    <hr>
+
+<h2>Image Gen Test</h2>
+<textarea id="imgPrompt" rows="4" cols="60" placeholder="Describe the image you want..."></textarea>
+<br />
+<button id="genImg">Generate Image</button>
+
+<p>Result:</p>
+<img id="imgOut" alt="Generated image will appear here" />
+<pre id="imgErr"></pre>
+
+
+    <script>
+      const API_URL = "https://overcerebral-indicially-florencia.ngrok-free.dev/api/chat";
+      const DEV_SECRET = "some-long-random-string";
+
+      const promptEl = document.getElementById("prompt");
+      const outputEl = document.getElementById("output");
+
+      document.getElementById("clear").onclick = () => {
+        promptEl.value = "";
+        outputEl.textContent = "";
+      };
+
+      document.getElementById("send").onclick = async () => {
+        const prompt = promptEl.value.trim();
+        if (!prompt) return;
+
+        outputEl.textContent = "Sending...";
+
+        try {
+          const res = await fetch(API_URL, {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              "x-dev-secret": DEV_SECRET,
+            },
+            body: JSON.stringify({
+              messages: [{ role: "user", content: prompt }],
+            }),
+          });
+
+          const text = await res.text();
+          if (!res.ok) throw new Error(text);
+
+          const data = JSON.parse(text);
+          outputEl.textContent = data.output ?? "(no output returned)";
+        } catch (err) {
+          outputEl.textContent = String(err);
+        }
+      };
+
+      const BASE_URL = "https://overcerebral-indicially-florencia.ngrok-free.dev";
+
+  document.getElementById("genImg").onclick = async () => {
+    const prompt = document.getElementById("imgPrompt").value.trim();
+    const imgOut = document.getElementById("imgOut");
+    const imgErr = document.getElementById("imgErr");
+    imgErr.textContent = "";
+    imgOut.removeAttribute("src");
+
+    if (!prompt) return;
+
+    try {
+      const res = await fetch(`${BASE_URL}/api/image`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "x-dev-secret": DEV_SECRET,
+        },
+        body: JSON.stringify({ prompt, size: "1024x1024" }),
+      });
+
+      const text = await res.text();
+      if (!res.ok) throw new Error(text);
+
+      const data = JSON.parse(text);
+
+      // Render base64 as a data URL
+      imgOut.src = `data:image/png;base64,${data.b64}`;
+    } catch (e) {
+      imgErr.textContent = String(e);
+    }
+  };
+    </script>
+  </body>
+</html>
